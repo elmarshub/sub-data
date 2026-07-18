@@ -3,12 +3,7 @@ import { posthog } from "@/lib/posthog";
 import { ClerkProvider, useUser } from "@clerk/expo";
 import { tokenCache } from "@clerk/expo/token-cache";
 import { useFonts } from "expo-font";
-import {
-  SplashScreen,
-  Stack,
-  useGlobalSearchParams,
-  usePathname,
-} from "expo-router";
+import { SplashScreen, Stack, usePathname } from "expo-router";
 import { PostHogProvider } from "posthog-react-native";
 import { useEffect, useRef } from "react";
 import { Text, View } from "react-native";
@@ -24,7 +19,6 @@ SplashScreen.preventAutoHideAsync();
 function RootLayoutContent() {
   const { user } = useUser();
   const pathname = usePathname();
-  const params = useGlobalSearchParams();
   const previousPathname = useRef<string | undefined>(undefined);
   const [fontsLoaded, error] = useFonts({
     "sans-regular": require("../assets/fonts/PlusJakartaSans-Regular.ttf"),
@@ -46,6 +40,8 @@ function RootLayoutContent() {
       posthog.identify(user.id, {
         ...(user.username ? { username: user.username } : {}),
       });
+    } else {
+      posthog.reset();
     }
   }, [user]);
 
@@ -53,11 +49,10 @@ function RootLayoutContent() {
     if (previousPathname.current !== pathname) {
       posthog.screen(pathname, {
         previous_screen: previousPathname.current ?? null,
-        ...params,
       });
       previousPathname.current = pathname;
     }
-  }, [params, pathname]);
+  }, [pathname]);
 
   if (error) {
     console.error("Failed to load fonts:", error);

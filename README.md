@@ -20,7 +20,7 @@ A subscription tracking app built with Expo, React Native, and TypeScript. Track
 
 2. Configure environment variables — create a `.env` file with:
 
-   ```
+   ```bash
    EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_key
    EXPO_PUBLIC_POSTHOG_PROJECT_TOKEN=your_posthog_token
    EXPO_PUBLIC_POSTHOG_HOST=your_posthog_host

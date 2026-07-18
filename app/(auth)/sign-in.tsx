@@ -69,9 +69,6 @@ const SignIn = () => {
       }
 
       if (signIn.status === "complete") {
-        posthog.capture("sign_in_completed", {
-          authentication_method: "password",
-        });
         await signIn.finalize({
           navigate: ({ session, decorateUrl }) => {
             const dest = resolveTaskDestination(session.currentTask);
@@ -82,6 +79,9 @@ const SignIn = () => {
               router.push(url as Href);
             }
           },
+        });
+        posthog.capture("sign_in_completed", {
+          authentication_method: "password",
         });
       } else if (
         signIn.status === "needs_second_factor" ||
@@ -148,9 +148,6 @@ const SignIn = () => {
         return;
       }
       if (signIn.status === "complete") {
-        posthog.capture("sign_in_completed", {
-          authentication_method: mfaStrategy ?? "email_code",
-        });
         await signIn.finalize({
           navigate: ({ session, decorateUrl }) => {
             const dest = resolveTaskDestination(session.currentTask);
@@ -161,6 +158,9 @@ const SignIn = () => {
               router.push(url as Href);
             }
           },
+        });
+        posthog.capture("sign_in_completed", {
+          authentication_method: mfaStrategy ?? "email_code",
         });
       } else {
         setFormError("Verification could not be completed. Please try again.");

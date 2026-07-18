@@ -97,9 +97,6 @@ const SignUp = () => {
     try {
       await signUp.verifications.verifyEmailCode({ code });
       if (signUp.status === "complete") {
-        posthog.capture("sign_up_completed", {
-          authentication_method: "email_verification",
-        });
         await signUp.finalize({
           navigate: ({ session, decorateUrl }) => {
             const dest = resolveTaskDestination(session.currentTask);
@@ -110,6 +107,9 @@ const SignUp = () => {
               router.push(url as Href);
             }
           },
+        });
+        posthog.capture("sign_up_completed", {
+          authentication_method: "email_verification",
         });
       } else {
         setFormError("Sign-up could not be completed. Please try again.");
