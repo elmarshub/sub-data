@@ -20,6 +20,10 @@ module.exports = {
       spacing: {
         18: "72px",
         30: "120px",
+        50: "200px",
+      },
+      borderRadius: {
+        "4xl": "2rem",
       },
       fontFamily: {
         sans: ["sans-regular"],
