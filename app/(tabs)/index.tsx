@@ -9,6 +9,7 @@ import {
 import { icons } from "@/constants/icons";
 import { images } from "@/constants/images";
 import "@/global.css";
+import { posthog } from "@/lib/posthog";
 import { formatCurrency } from "@/lib/utils";
 import { useUser } from "@clerk/expo";
 import dayjs from "dayjs";
@@ -94,11 +95,14 @@ export default function App() {
           <SubscriptionCard
             {...item}
             expanded={expandedSunscriptionId === item.id}
-            onPress={() =>
-              setExpandedSunscriptionId((currentId) =>
-                currentId === item.id ? null : item.id,
-              )
-            }
+            onPress={() => {
+              const isExpanded = expandedSunscriptionId === item.id;
+              setExpandedSunscriptionId(isExpanded ? null : item.id);
+              posthog.capture("subscription_card_toggled", {
+                subscription_id: item.id,
+                is_expanded: !isExpanded,
+              });
+            }}
           />
         )}
         ListEmptyComponent={

@@ -1,5 +1,6 @@
 import AuthBrandBlock from "@/components/AuthBrandBlock";
 import AuthField from "@/components/AuthField";
+import { posthog } from "@/lib/posthog";
 import { resolveTaskDestination } from "@/lib/utils";
 import { useAuth, useSignUp } from "@clerk/expo";
 import { type Href, Link, useRouter } from "expo-router";
@@ -107,13 +108,17 @@ const SignUp = () => {
             }
           },
         });
+        posthog.capture("sign_up_completed", {
+          authentication_method: "email_verification",
+        });
       } else {
         setFormError("Sign-up could not be completed. Please try again.");
       }
     } catch (err) {
-      const msg =
-        err instanceof Error ? err.message : "An unexpected error occurred.";
-      setFormError(msg);
+      const error =
+        err instanceof Error ? err : new Error("Sign-up verification failed");
+      posthog.captureException(error, { flow: "sign_up_verification" });
+      setFormError(error.message);
     }
   };
 
