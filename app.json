@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "sub-data",
-    "slug": "sub-data",
+    "name": "Subly",
+    "slug": "subly",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -52,7 +52,9 @@
             "./assets/fonts/PlusJakartaSans-Light.ttf"
           ]
         }
-      ]
+      ],
+      "@clerk/expo",
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true,

@@ -75,7 +75,7 @@ const SubscriptionCard = ({
                   numberOfLines={1}
                   ellipsizeMode="tail"
                 >
-                  {category?.trim() || plan?.trim() || "N/A"}
+                  {category?.trim() || plan?.trim() || "Not provided"}
                 </Text>
               </View>
             </View>
@@ -87,7 +87,9 @@ const SubscriptionCard = ({
                   numberOfLines={1}
                   ellipsizeMode="tail"
                 >
-                  {startDate ? formatSubscriptionDateTime(startDate) : "N/A"}
+                  {startDate
+                    ? formatSubscriptionDateTime(startDate)
+                    : "Not provided"}
                 </Text>
               </View>
             </View>
@@ -101,7 +103,7 @@ const SubscriptionCard = ({
                 >
                   {renewalDate
                     ? formatSubscriptionDateTime(renewalDate)
-                    : "N/A"}
+                    : "Not provided"}
                 </Text>
               </View>
             </View>
@@ -113,7 +115,7 @@ const SubscriptionCard = ({
                   numberOfLines={1}
                   ellipsizeMode="tail"
                 >
-                  {status ? formatStatusLabel(status) : "N/A"}
+                  {status ? formatStatusLabel(status) : "Not provided"}
                 </Text>
               </View>
             </View>
