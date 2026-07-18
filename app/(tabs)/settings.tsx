@@ -13,6 +13,7 @@ const Settings = () => {
     setSignOutError(null);
     setIsSigningOut(true);
     try {
+      await new Promise((resolve) => setTimeout(resolve, 600));
       await signOut();
     } catch (err) {
       const msg =
@@ -20,7 +21,6 @@ const Settings = () => {
           ? err.message
           : "Failed to sign out. Please try again.";
       setSignOutError(msg);
-    } finally {
       setIsSigningOut(false);
     }
   };

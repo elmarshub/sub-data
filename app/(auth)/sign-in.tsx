@@ -87,9 +87,27 @@ const SignIn = () => {
         if (factor) {
           setMfaStrategy(factor.strategy);
           if (factor.strategy === "email_code") {
-            await signIn.mfa.sendEmailCode();
+            const { error: sendError } = await signIn.mfa.sendEmailCode();
+            if (sendError) {
+              setFormError(
+                sendError.longMessage ||
+                  sendError.message ||
+                  "Failed to send verification code.",
+              );
+              setMfaStrategy(null);
+              return;
+            }
           } else if (factor.strategy === "phone_code") {
-            await signIn.mfa.sendPhoneCode();
+            const { error: sendError } = await signIn.mfa.sendPhoneCode();
+            if (sendError) {
+              setFormError(
+                sendError.longMessage ||
+                  sendError.message ||
+                  "Failed to send verification code.",
+              );
+              setMfaStrategy(null);
+              return;
+            }
           }
         } else {
           setFormError("No supported verification method available.");
@@ -193,11 +211,20 @@ const SignIn = () => {
                 {canResendMfa(mfaStrategy) ? (
                   <Pressable
                     className="auth-secondary-button"
-                    onPress={() =>
-                      mfaStrategy === "phone_code"
-                        ? signIn.mfa.sendPhoneCode()
-                        : signIn.mfa.sendEmailCode()
-                    }
+                    onPress={async () => {
+                      setFormError(null);
+                      const { error: sendError } =
+                        mfaStrategy === "phone_code"
+                          ? await signIn.mfa.sendPhoneCode()
+                          : await signIn.mfa.sendEmailCode();
+                      if (sendError) {
+                        setFormError(
+                          sendError.longMessage ||
+                            sendError.message ||
+                            "Failed to resend verification code.",
+                        );
+                      }
+                    }}
                   >
                     <Text className="auth-secondary-button-text">
                       Resend code
@@ -206,7 +233,12 @@ const SignIn = () => {
                 ) : null}
                 <Pressable
                   className="auth-secondary-button"
-                  onPress={() => signIn.reset()}
+                  onPress={() => {
+                    setCode("");
+                    setMfaStrategy(null);
+                    setFormError(null);
+                    signIn.reset();
+                  }}
                 >
                   <Text className="auth-secondary-button-text">Start over</Text>
                 </Pressable>
