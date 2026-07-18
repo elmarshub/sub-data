@@ -1,9 +1,11 @@
 import "@/global.css";
-import { ClerkProvider } from "@clerk/expo";
+import { posthog } from "@/lib/posthog";
+import { ClerkProvider, useUser } from "@clerk/expo";
 import { tokenCache } from "@clerk/expo/token-cache";
 import { useFonts } from "expo-font";
-import { SplashScreen, Stack } from "expo-router";
-import { useEffect } from "react";
+import { SplashScreen, Stack, usePathname } from "expo-router";
+import { PostHogProvider } from "posthog-react-native";
+import { useEffect, useRef } from "react";
 import { Text, View } from "react-native";
 
 const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
@@ -15,6 +17,9 @@ if (!publishableKey) {
 SplashScreen.preventAutoHideAsync();
 
 function RootLayoutContent() {
+  const { user } = useUser();
+  const pathname = usePathname();
+  const previousPathname = useRef<string | undefined>(undefined);
   const [fontsLoaded, error] = useFonts({
     "sans-regular": require("../assets/fonts/PlusJakartaSans-Regular.ttf"),
     "sans-bold": require("../assets/fonts/PlusJakartaSans-Bold.ttf"),
@@ -30,6 +35,25 @@ function RootLayoutContent() {
     }
   }, [fontsLoaded, error]);
 
+  useEffect(() => {
+    if (user) {
+      posthog.identify(user.id, {
+        ...(user.username ? { username: user.username } : {}),
+      });
+    } else {
+      posthog.reset();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (previousPathname.current !== pathname) {
+      posthog.screen(pathname, {
+        previous_screen: previousPathname.current ?? null,
+      });
+      previousPathname.current = pathname;
+    }
+  }, [pathname]);
+
   if (error) {
     console.error("Failed to load fonts:", error);
     return (
@@ -43,7 +67,14 @@ function RootLayoutContent() {
     return null;
   }
 
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <PostHogProvider
+      client={posthog}
+      autocapture={{ captureScreens: false, captureTouches: true }}
+    >
+      <Stack screenOptions={{ headerShown: false }} />
+    </PostHogProvider>
+  );
 }
 
 export default function RootLayout() {
