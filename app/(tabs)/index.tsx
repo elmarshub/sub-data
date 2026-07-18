@@ -4,19 +4,20 @@ import UpcomingSubscriptionCard from "@/components/UpcomingSubscriptionCard";
 import {
   HOME_BALANCE,
   HOME_SUBSCRIPTIONS,
-  HOME_USER,
   UPCOMING_SUBSCRIPTIONS,
 } from "@/constants/data";
 import { icons } from "@/constants/icons";
 import { images } from "@/constants/images";
 import "@/global.css";
 import { formatCurrency } from "@/lib/utils";
+import { useUser } from "@clerk/expo";
 import dayjs from "dayjs";
 import { useState } from "react";
 import { FlatList, Image, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function App() {
+  const { user } = useUser();
   const [expandedSunscriptionId, setExpandedSunscriptionId] = useState<
     string | null
   >(null);
@@ -29,8 +30,20 @@ export default function App() {
             {/* header fro user and add button */}
             <View className="home-header">
               <View className="home-user">
-                <Image source={images.avatar} className="home-avatar" />
-                <Text className="home-user-name">{HOME_USER.name}</Text>
+                <Image
+                  source={
+                    user?.imageUrl ? { uri: user.imageUrl } : images.avatar
+                  }
+                  className="home-avatar"
+                />
+                <Text className="home-user-name capitalize">
+                  {user?.username ||
+                    user?.firstName ||
+                    user?.fullName ||
+                    (user?.primaryEmailAddress?.emailAddress
+                      ? user.primaryEmailAddress.emailAddress.split("@")[0]
+                      : "User")}
+                </Text>
               </View>
 
               <Image
@@ -72,7 +85,7 @@ export default function App() {
               />
             </View>
 
-            <ListHeading title="All Subscription" />
+            <ListHeading title="All Subscriptions" />
           </>
         )}
         data={HOME_SUBSCRIPTIONS}

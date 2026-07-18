@@ -25,3 +25,42 @@ export const formatStatusLabel = (value?: string): string => {
   if (!value) return "Not provided";
   return value.charAt(0).toUpperCase() + value.slice(1);
 };
+
+const TASK_ROUTES: Record<string, string> = {
+  "choose-organization": "/onboarding",
+  "reset-password": "/onboarding",
+  "setup-mfa": "/onboarding",
+};
+
+export function resolveTaskDestination(
+  currentTask: { key: string } | null | undefined,
+): string {
+  if (currentTask?.key && TASK_ROUTES[currentTask.key]) {
+    return TASK_ROUTES[currentTask.key];
+  }
+  return "/";
+}
+
+const MFA_SUBTITLES: Record<string, string> = {
+  email_code:
+    "For your security, we need to verify it's you. Enter the code sent to your email.",
+  phone_code:
+    "For your security, we need to verify it's you. Enter the code sent to your phone.",
+  totp: "For your security, we need to verify it's you. Enter the code from your authenticator app.",
+  backup_code:
+    "For your security, we need to verify it's you. Enter one of your backup codes.",
+};
+
+export function getMfaSubtitle(strategy: string | null): string {
+  return MFA_SUBTITLES[strategy ?? ""] ?? MFA_SUBTITLES.email_code;
+}
+
+export function canResendMfa(strategy: string | null): boolean {
+  return strategy === "email_code" || strategy === "phone_code";
+}
+
+export function selectMfaFactor<T extends { strategy: string }>(
+  factors: T[],
+): T | undefined {
+  return factors.find((f) => f.strategy !== "email_link");
+}
