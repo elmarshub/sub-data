@@ -1,3 +1,4 @@
+import { posthog } from "@/lib/posthog";
 import { useClerk, useUser } from "@clerk/expo";
 import React from "react";
 import { Image, Pressable, Text, View } from "react-native";
@@ -14,13 +15,13 @@ const Settings = () => {
     setIsSigningOut(true);
     try {
       await new Promise((resolve) => setTimeout(resolve, 600));
+      posthog.capture("user_signed_out");
+      posthog.reset();
       await signOut();
     } catch (err) {
-      const msg =
-        err instanceof Error
-          ? err.message
-          : "Failed to sign out. Please try again.";
-      setSignOutError(msg);
+      const error = err instanceof Error ? err : new Error("Sign-out failed");
+      posthog.captureException(error, { flow: "sign_out" });
+      setSignOutError(error.message);
       setIsSigningOut(false);
     }
   };

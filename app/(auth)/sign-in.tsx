@@ -1,5 +1,6 @@
 import AuthBrandBlock from "@/components/AuthBrandBlock";
 import AuthField from "@/components/AuthField";
+import { posthog } from "@/lib/posthog";
 import {
   canResendMfa,
   getMfaSubtitle,
@@ -68,6 +69,9 @@ const SignIn = () => {
       }
 
       if (signIn.status === "complete") {
+        posthog.capture("sign_in_completed", {
+          authentication_method: "password",
+        });
         await signIn.finalize({
           navigate: ({ session, decorateUrl }) => {
             const dest = resolveTaskDestination(session.currentTask);
@@ -116,9 +120,9 @@ const SignIn = () => {
         setFormError("Sign-in could not be completed. Please try again.");
       }
     } catch (err) {
-      const msg =
-        err instanceof Error ? err.message : "An unexpected error occurred.";
-      setFormError(msg);
+      const error = err instanceof Error ? err : new Error("Sign-in failed");
+      posthog.captureException(error, { flow: "sign_in" });
+      setFormError(error.message);
     }
   };
 
@@ -144,6 +148,9 @@ const SignIn = () => {
         return;
       }
       if (signIn.status === "complete") {
+        posthog.capture("sign_in_completed", {
+          authentication_method: mfaStrategy ?? "email_code",
+        });
         await signIn.finalize({
           navigate: ({ session, decorateUrl }) => {
             const dest = resolveTaskDestination(session.currentTask);
@@ -159,9 +166,10 @@ const SignIn = () => {
         setFormError("Verification could not be completed. Please try again.");
       }
     } catch (err) {
-      const msg =
-        err instanceof Error ? err.message : "An unexpected error occurred.";
-      setFormError(msg);
+      const error =
+        err instanceof Error ? err : new Error("Sign-in verification failed");
+      posthog.captureException(error, { flow: "sign_in_verification" });
+      setFormError(error.message);
     }
   };
 
