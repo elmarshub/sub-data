@@ -1,5 +1,11 @@
 import AuthBrandBlock from "@/components/AuthBrandBlock";
 import AuthField from "@/components/AuthField";
+import {
+  canResendMfa,
+  getMfaSubtitle,
+  resolveTaskDestination,
+  selectMfaFactor,
+} from "@/lib/utils";
 import { useSignIn } from "@clerk/expo";
 import { type Href, Link, useRouter } from "expo-router";
 import React from "react";
@@ -26,6 +32,8 @@ const SignIn = () => {
     email?: string;
     password?: string;
   }>({});
+  const [formError, setFormError] = React.useState<string | null>(null);
+  const [mfaStrategy, setMfaStrategy] = React.useState<string | null>(null);
 
   const validateForm = () => {
     const errs: { email?: string; password?: string } = {};
@@ -43,6 +51,7 @@ const SignIn = () => {
 
   const handleSubmit = async () => {
     if (!validateForm()) return;
+    setFormError(null);
 
     try {
       const { error } = await signIn.password({
@@ -50,14 +59,19 @@ const SignIn = () => {
         password,
       });
       if (error) {
-        console.error(JSON.stringify(error, null, 2));
+        const msg =
+          error.longMessage ||
+          error.message ||
+          "Sign-in failed. Please try again.";
+        setFormError(msg);
         return;
       }
 
       if (signIn.status === "complete") {
         await signIn.finalize({
-          navigate: ({ decorateUrl }) => {
-            const url = decorateUrl("/");
+          navigate: ({ session, decorateUrl }) => {
+            const dest = resolveTaskDestination(session.currentTask);
+            const url = decorateUrl(dest);
             if (url.startsWith("http")) {
               window.location.href = url;
             } else {
@@ -65,35 +79,57 @@ const SignIn = () => {
             }
           },
         });
-      } else if (signIn.status === "needs_second_factor") {
-        const emailCodeFactor = signIn.supportedSecondFactors.find(
-          (factor) => factor.strategy === "email_code",
-        );
-        if (emailCodeFactor) {
-          await signIn.mfa.sendEmailCode();
-        }
-      } else if (signIn.status === "needs_client_trust") {
-        const emailCodeFactor = signIn.supportedSecondFactors.find(
-          (factor) => factor.strategy === "email_code",
-        );
-        if (emailCodeFactor) {
-          await signIn.mfa.sendEmailCode();
+      } else if (
+        signIn.status === "needs_second_factor" ||
+        signIn.status === "needs_client_trust"
+      ) {
+        const factor = selectMfaFactor(signIn.supportedSecondFactors);
+        if (factor) {
+          setMfaStrategy(factor.strategy);
+          if (factor.strategy === "email_code") {
+            await signIn.mfa.sendEmailCode();
+          } else if (factor.strategy === "phone_code") {
+            await signIn.mfa.sendPhoneCode();
+          }
+        } else {
+          setFormError("No supported verification method available.");
         }
       } else {
-        console.error("Sign-in attempt not complete:", signIn);
+        setFormError("Sign-in could not be completed. Please try again.");
       }
     } catch (err) {
-      console.error("Sign-in error:", err);
+      const msg =
+        err instanceof Error ? err.message : "An unexpected error occurred.";
+      setFormError(msg);
     }
   };
 
   const handleVerify = async () => {
+    setFormError(null);
     try {
-      await signIn.mfa.verifyEmailCode({ code });
+      let verifyError: { longMessage?: string; message?: string } | null = null;
+      if (mfaStrategy === "phone_code") {
+        ({ error: verifyError } = await signIn.mfa.verifyPhoneCode({ code }));
+      } else if (mfaStrategy === "totp") {
+        ({ error: verifyError } = await signIn.mfa.verifyTOTP({ code }));
+      } else if (mfaStrategy === "backup_code") {
+        ({ error: verifyError } = await signIn.mfa.verifyBackupCode({ code }));
+      } else {
+        ({ error: verifyError } = await signIn.mfa.verifyEmailCode({ code }));
+      }
+      if (verifyError) {
+        const msg =
+          verifyError.longMessage ||
+          verifyError.message ||
+          "Verification failed. Please try again.";
+        setFormError(msg);
+        return;
+      }
       if (signIn.status === "complete") {
         await signIn.finalize({
-          navigate: ({ decorateUrl }) => {
-            const url = decorateUrl("/");
+          navigate: ({ session, decorateUrl }) => {
+            const dest = resolveTaskDestination(session.currentTask);
+            const url = decorateUrl(dest);
             if (url.startsWith("http")) {
               window.location.href = url;
             } else {
@@ -102,16 +138,21 @@ const SignIn = () => {
           },
         });
       } else {
-        console.error("Sign-in attempt not complete:", signIn);
+        setFormError("Verification could not be completed. Please try again.");
       }
     } catch (err) {
-      console.error("Verification error:", err);
+      const msg =
+        err instanceof Error ? err.message : "An unexpected error occurred.";
+      setFormError(msg);
     }
   };
 
   const isLoading = fetchStatus === "fetching";
 
-  if (signIn.status === "needs_client_trust") {
+  if (
+    signIn.status === "needs_client_trust" ||
+    signIn.status === "needs_second_factor"
+  ) {
     return (
       <SafeAreaView className="auth-safe-area">
         <KeyboardAvoidingView
@@ -125,10 +166,13 @@ const SignIn = () => {
           >
             <AuthBrandBlock
               title="Verify your account"
-              subtitle="For your security, we need to verify it's you. Enter the code sent to your email."
+              subtitle={getMfaSubtitle(mfaStrategy)}
             />
             <View className="auth-card">
               <View className="auth-form">
+                {formError ? (
+                  <Text className="auth-error">{formError}</Text>
+                ) : null}
                 <AuthField
                   label="Verification code"
                   value={code}
@@ -146,14 +190,20 @@ const SignIn = () => {
                     {isLoading ? "Verifying..." : "Verify"}
                   </Text>
                 </Pressable>
-                <Pressable
-                  className="auth-secondary-button"
-                  onPress={() => signIn.mfa.sendEmailCode()}
-                >
-                  <Text className="auth-secondary-button-text">
-                    Resend code
-                  </Text>
-                </Pressable>
+                {canResendMfa(mfaStrategy) ? (
+                  <Pressable
+                    className="auth-secondary-button"
+                    onPress={() =>
+                      mfaStrategy === "phone_code"
+                        ? signIn.mfa.sendPhoneCode()
+                        : signIn.mfa.sendEmailCode()
+                    }
+                  >
+                    <Text className="auth-secondary-button-text">
+                      Resend code
+                    </Text>
+                  </Pressable>
+                ) : null}
                 <Pressable
                   className="auth-secondary-button"
                   onPress={() => signIn.reset()}
@@ -185,6 +235,9 @@ const SignIn = () => {
           />
           <View className="auth-card">
             <View className="auth-form">
+              {formError ? (
+                <Text className="auth-error">{formError}</Text>
+              ) : null}
               <AuthField
                 label="Email address"
                 value={emailAddress}

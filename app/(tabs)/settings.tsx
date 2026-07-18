@@ -6,6 +6,24 @@ import { SafeAreaView } from "react-native-safe-area-context";
 const Settings = () => {
   const { signOut } = useClerk();
   const { user } = useUser();
+  const [isSigningOut, setIsSigningOut] = React.useState(false);
+  const [signOutError, setSignOutError] = React.useState<string | null>(null);
+
+  const handleSignOut = async () => {
+    setSignOutError(null);
+    setIsSigningOut(true);
+    try {
+      await signOut();
+    } catch (err) {
+      const msg =
+        err instanceof Error
+          ? err.message
+          : "Failed to sign out. Please try again.";
+      setSignOutError(msg);
+    } finally {
+      setIsSigningOut(false);
+    }
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-background p-4">
@@ -34,11 +52,17 @@ const Settings = () => {
           </View>
         </View>
 
+        {signOutError ? (
+          <Text className="text-sm text-destructive mb-2">{signOutError}</Text>
+        ) : null}
         <Pressable
-          onPress={() => signOut()}
-          className="bg-destructive rounded-xl py-4 items-center"
+          onPress={handleSignOut}
+          disabled={isSigningOut}
+          className={`bg-destructive rounded-xl py-4 items-center ${isSigningOut && "opacity-50"}`}
         >
-          <Text className="text-white font-sans-bold text-base">Log Out</Text>
+          <Text className="text-white font-sans-bold text-base">
+            {isSigningOut ? "Signing out..." : "Log Out"}
+          </Text>
         </Pressable>
       </View>
     </SafeAreaView>

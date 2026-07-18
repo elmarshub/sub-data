@@ -1,5 +1,6 @@
 import AuthBrandBlock from "@/components/AuthBrandBlock";
 import AuthField from "@/components/AuthField";
+import { resolveTaskDestination } from "@/lib/utils";
 import { useAuth, useSignUp } from "@clerk/expo";
 import { type Href, Link, useRouter } from "expo-router";
 import React from "react";
@@ -31,6 +32,7 @@ const SignUp = () => {
     password?: string;
     confirmPassword?: string;
   }>({});
+  const [formError, setFormError] = React.useState<string | null>(null);
 
   const validateForm = () => {
     const errs: {
@@ -65,6 +67,7 @@ const SignUp = () => {
 
   const handleSubmit = async () => {
     if (!validateForm()) return;
+    setFormError(null);
 
     try {
       const { error } = await signUp.password({
@@ -73,22 +76,30 @@ const SignUp = () => {
         username,
       });
       if (error) {
-        console.error(JSON.stringify(error, null, 2));
+        const msg =
+          error.longMessage ||
+          error.message ||
+          "Sign-up failed. Please try again.";
+        setFormError(msg);
         return;
       }
       await signUp.verifications.sendEmailCode();
     } catch (err) {
-      console.error("Sign-up error:", err);
+      const msg =
+        err instanceof Error ? err.message : "An unexpected error occurred.";
+      setFormError(msg);
     }
   };
 
   const handleVerify = async () => {
+    setFormError(null);
     try {
       await signUp.verifications.verifyEmailCode({ code });
       if (signUp.status === "complete") {
         await signUp.finalize({
-          navigate: ({ decorateUrl }) => {
-            const url = decorateUrl("/");
+          navigate: ({ session, decorateUrl }) => {
+            const dest = resolveTaskDestination(session.currentTask);
+            const url = decorateUrl(dest);
             if (url.startsWith("http")) {
               window.location.href = url;
             } else {
@@ -97,10 +108,12 @@ const SignUp = () => {
           },
         });
       } else {
-        console.error("Sign-up attempt not complete:", signUp);
+        setFormError("Sign-up could not be completed. Please try again.");
       }
     } catch (err) {
-      console.error("Verification error:", err);
+      const msg =
+        err instanceof Error ? err.message : "An unexpected error occurred.";
+      setFormError(msg);
     }
   };
 
@@ -132,6 +145,9 @@ const SignUp = () => {
             />
             <View className="auth-card">
               <View className="auth-form">
+                {formError ? (
+                  <Text className="auth-error">{formError}</Text>
+                ) : null}
                 <AuthField
                   label="Verification code"
                   value={code}
@@ -182,6 +198,9 @@ const SignUp = () => {
           />
           <View className="auth-card">
             <View className="auth-form">
+              {formError ? (
+                <Text className="auth-error">{formError}</Text>
+              ) : null}
               <AuthField
                 label="Username"
                 value={username}

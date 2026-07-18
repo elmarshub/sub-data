@@ -38,12 +38,18 @@ const AuthField = ({
           secureTextEntry={isSecure}
           keyboardType={keyboardType}
           autoCapitalize={autoCapitalize}
+          accessibilityLabel={label}
         />
         {secureTextEntry && (
           <Pressable
             onPress={() => setShowPassword((prev) => !prev)}
             className="absolute right-4 top-0 bottom-0 items-center justify-center"
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel={
+              showPassword ? "Hide password" : "Show password"
+            }
+            accessibilityState={{ expanded: showPassword }}
           >
             <Text className="text-sm font-sans-semibold text-muted-foreground">
               {showPassword ? "Hide" : "Show"}
