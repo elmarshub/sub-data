@@ -75,7 +75,7 @@ const CreateSubscriptionModal = ({
       newErrors.name = "Name is required";
     }
 
-    const parsedPrice = parseFloat(price);
+    const parsedPrice = Number(price);
     if (!price.trim() || isNaN(parsedPrice) || parsedPrice <= 0) {
       newErrors.price = "Enter a valid price";
     }
@@ -116,7 +116,7 @@ const CreateSubscriptionModal = ({
     resetForm();
   };
 
-  const isValid = name.trim() && parseFloat(price) > 0;
+  const isValid = name.trim() && Number(price) > 0;
 
   return (
     <Modal
@@ -132,7 +132,12 @@ const CreateSubscriptionModal = ({
         >
           <View className="modal-header">
             <Text className="modal-title">New Subscription</Text>
-            <Pressable className="modal-close" onPress={handleClose}>
+            <Pressable
+              className="modal-close"
+              onPress={handleClose}
+              accessibilityRole="button"
+              accessibilityLabel="Close new subscription modal"
+            >
               <Text className="modal-close-text">&times;</Text>
             </Pressable>
           </View>
@@ -143,6 +148,7 @@ const CreateSubscriptionModal = ({
             <ScrollView
               ref={scrollRef}
               className="modal-body"
+              contentContainerClassName="pb-16"
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
             >
