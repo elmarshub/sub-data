@@ -374,4 +374,20 @@
   .category-chip-text-active {
     @apply text-accent;
   }
+
+  .sub-screen-title {
+    @apply mb-4 text-2xl font-sans-bold text-primary;
+  }
+
+  .sub-search-bar {
+    @apply mb-4 rounded-2xl border border-border bg-card px-4 py-3;
+  }
+
+  .sub-search-input {
+    @apply text-base font-sans-medium text-primary;
+  }
+
+  .sub-search-placeholder {
+    @apply text-muted-foreground;
+  }
 }
