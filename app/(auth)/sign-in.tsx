@@ -1,15 +1,13 @@
 import AuthBrandBlock from "@/components/AuthBrandBlock";
 import AuthField from "@/components/AuthField";
 import { posthog } from "@/lib/posthog";
-import {
-  canResendMfa,
-  getMfaSubtitle,
-  resolveTaskDestination,
-  selectMfaFactor,
-} from "@/lib/utils";
+import { canResendMfa, getMfaSubtitle, selectMfaFactor } from "@/lib/utils";
+import { MfaCodeValues, SignInValues, mfaCodeSchema, signInSchema } from "@/schemas/auth";
 import { useSignIn } from "@clerk/expo";
-import { type Href, Link, useRouter } from "expo-router";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Link } from "expo-router";
 import React from "react";
+import { Controller, useForm } from "react-hook-form";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -20,45 +18,37 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 const SignIn = () => {
   const { signIn, errors, fetchStatus } = useSignIn();
-  const router = useRouter();
-
-  const [emailAddress, setEmailAddress] = React.useState("");
-  const [password, setPassword] = React.useState("");
-  const [code, setCode] = React.useState("");
-  const [localErrors, setLocalErrors] = React.useState<{
-    email?: string;
-    password?: string;
-  }>({});
   const [formError, setFormError] = React.useState<string | null>(null);
   const [mfaStrategy, setMfaStrategy] = React.useState<string | null>(null);
 
-  const validateForm = () => {
-    const errs: { email?: string; password?: string } = {};
-    if (!emailAddress.trim()) {
-      errs.email = "Email is required";
-    } else if (!EMAIL_REGEX.test(emailAddress)) {
-      errs.email = "Enter a valid email address";
-    }
-    if (!password) {
-      errs.password = "Password is required";
-    }
-    setLocalErrors(errs);
-    return Object.keys(errs).length === 0;
-  };
+  const {
+    control: signInControl,
+    handleSubmit: handleSignInSubmit,
+    formState: { errors: signInErrors },
+  } = useForm<SignInValues>({
+    resolver: zodResolver(signInSchema),
+    defaultValues: { emailAddress: "", password: "" },
+  });
 
-  const handleSubmit = async () => {
-    if (!validateForm()) return;
+  const {
+    control: mfaControl,
+    handleSubmit: handleMfaSubmit,
+    reset: resetMfaForm,
+    formState: { errors: mfaErrors },
+  } = useForm<MfaCodeValues>({
+    resolver: zodResolver(mfaCodeSchema),
+    defaultValues: { code: "" },
+  });
+
+  const isLoading = fetchStatus === "fetching";
+
+  const onSignInValid = async ({ emailAddress, password }: SignInValues) => {
     setFormError(null);
 
     try {
-      const { error } = await signIn.password({
-        emailAddress,
-        password,
-      });
+      const { error } = await signIn.password({ emailAddress, password });
       if (error) {
         const msg =
           error.longMessage ||
@@ -69,17 +59,7 @@ const SignIn = () => {
       }
 
       if (signIn.status === "complete") {
-        await signIn.finalize({
-          navigate: ({ session, decorateUrl }) => {
-            const dest = resolveTaskDestination(session.currentTask);
-            const url = decorateUrl(dest);
-            if (url.startsWith("http")) {
-              window.location.href = url;
-            } else {
-              router.push(url as Href);
-            }
-          },
-        });
+        await signIn.finalize();
         posthog.capture("sign_in_completed", {
           authentication_method: "password",
         });
@@ -126,7 +106,7 @@ const SignIn = () => {
     }
   };
 
-  const handleVerify = async () => {
+  const onVerifyValid = async ({ code }: MfaCodeValues) => {
     setFormError(null);
     try {
       let verifyError: { longMessage?: string; message?: string } | null = null;
@@ -148,17 +128,7 @@ const SignIn = () => {
         return;
       }
       if (signIn.status === "complete") {
-        await signIn.finalize({
-          navigate: ({ session, decorateUrl }) => {
-            const dest = resolveTaskDestination(session.currentTask);
-            const url = decorateUrl(dest);
-            if (url.startsWith("http")) {
-              window.location.href = url;
-            } else {
-              router.push(url as Href);
-            }
-          },
-        });
+        await signIn.finalize();
         posthog.capture("sign_in_completed", {
           authentication_method: mfaStrategy ?? "email_code",
         });
@@ -172,8 +142,6 @@ const SignIn = () => {
       setFormError(error.message);
     }
   };
-
-  const isLoading = fetchStatus === "fetching";
 
   if (
     signIn.status === "needs_client_trust" ||
@@ -199,18 +167,24 @@ const SignIn = () => {
                 {formError ? (
                   <Text className="auth-error">{formError}</Text>
                 ) : null}
-                <AuthField
-                  label="Verification code"
-                  value={code}
-                  onChangeText={setCode}
-                  placeholder="Enter 6-digit code"
-                  error={errors.fields.code?.message}
-                  keyboardType="numeric"
+                <Controller
+                  control={mfaControl}
+                  name="code"
+                  render={({ field: { value, onChange } }) => (
+                    <AuthField
+                      label="Verification code"
+                      value={value}
+                      onChangeText={onChange}
+                      placeholder="Enter 6-digit code"
+                      error={mfaErrors.code?.message || errors.fields.code?.message}
+                      keyboardType="numeric"
+                    />
+                  )}
                 />
                 <Pressable
-                  className={`auth-button ${(!code || isLoading) && "auth-button-disabled"}`}
-                  onPress={handleVerify}
-                  disabled={!code || isLoading}
+                  className={`auth-button ${isLoading && "auth-button-disabled"}`}
+                  onPress={handleMfaSubmit(onVerifyValid)}
+                  disabled={isLoading}
                 >
                   <Text className="auth-button-text">
                     {isLoading ? "Verifying..." : "Verify"}
@@ -242,7 +216,7 @@ const SignIn = () => {
                 <Pressable
                   className="auth-secondary-button"
                   onPress={() => {
-                    setCode("");
+                    resetMfaForm();
                     setMfaStrategy(null);
                     setFormError(null);
                     signIn.reset();
@@ -278,31 +252,55 @@ const SignIn = () => {
               {formError ? (
                 <Text className="auth-error">{formError}</Text>
               ) : null}
-              <AuthField
-                label="Email address"
-                value={emailAddress}
-                onChangeText={setEmailAddress}
-                placeholder="you@example.com"
-                error={localErrors.email || errors.fields.identifier?.message}
-                keyboardType="email-address"
+              <Controller
+                control={signInControl}
+                name="emailAddress"
+                render={({ field: { value, onChange } }) => (
+                  <AuthField
+                    label="Email address"
+                    value={value}
+                    onChangeText={onChange}
+                    placeholder="you@example.com"
+                    error={
+                      signInErrors.emailAddress?.message ||
+                      errors.fields.identifier?.message
+                    }
+                    keyboardType="email-address"
+                  />
+                )}
               />
-              <AuthField
-                label="Password"
-                value={password}
-                onChangeText={setPassword}
-                placeholder="Enter your password"
-                error={localErrors.password || errors.fields.password?.message}
-                secureTextEntry
+              <Controller
+                control={signInControl}
+                name="password"
+                render={({ field: { value, onChange } }) => (
+                  <AuthField
+                    label="Password"
+                    value={value}
+                    onChangeText={onChange}
+                    placeholder="Enter your password"
+                    error={
+                      signInErrors.password?.message ||
+                      errors.fields.password?.message
+                    }
+                    secureTextEntry
+                  />
+                )}
               />
               <Pressable
-                className={`auth-button ${(!emailAddress || !password || isLoading) && "auth-button-disabled"}`}
-                onPress={handleSubmit}
-                disabled={!emailAddress || !password || isLoading}
+                className={`auth-button ${isLoading && "auth-button-disabled"}`}
+                onPress={handleSignInSubmit(onSignInValid)}
+                disabled={isLoading}
               >
                 <Text className="auth-button-text">
                   {isLoading ? "Signing in..." : "Sign In"}
                 </Text>
               </Pressable>
+
+              <View className="items-center">
+                <Link href="/(auth)/forgot-password">
+                  <Text className="auth-link">Forgot password?</Text>
+                </Link>
+              </View>
             </View>
           </View>
 

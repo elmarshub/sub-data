@@ -1,3 +1,5 @@
+const { colors } = require("./constants/colors");
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: ["./app/**/*.{js,jsx,ts,tsx}", "./components/**/*.{js,jsx,ts,tsx}"],
@@ -5,17 +7,17 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        background: "#fff9e3",
-        foreground: "#081126",
-        card: "#fff8e7",
-        muted: "#f6eecf",
-        "muted-foreground": "rgba(0, 0, 0, 0.6)",
-        primary: "#081126",
-        accent: "#ea7a53",
-        border: "rgba(0, 0, 0, 0.1)",
-        success: "#16a34a",
-        destructive: "#dc2626",
-        subscription: "#8fd1bd",
+        background: colors.background,
+        foreground: colors.foreground,
+        card: colors.card,
+        muted: colors.muted,
+        "muted-foreground": colors.mutedForeground,
+        primary: colors.primary,
+        accent: colors.accent,
+        border: colors.border,
+        success: colors.success,
+        destructive: colors.destructive,
+        subscription: colors.subscription,
       },
       spacing: {
         18: "72px",

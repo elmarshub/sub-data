@@ -39,3 +39,10 @@ export const icons = {
 } as const;
 
 export type IconKey = keyof typeof icons;
+
+export const getSubscriptionIcon = (iconKey?: string) => {
+  if (iconKey && iconKey in icons) {
+    return icons[iconKey as IconKey];
+  }
+  return icons.plus;
+};

@@ -26,21 +26,6 @@ export const formatStatusLabel = (value?: string): string => {
   return value.charAt(0).toUpperCase() + value.slice(1);
 };
 
-const TASK_ROUTES: Record<string, string> = {
-  "choose-organization": "/onboarding",
-  "reset-password": "/onboarding",
-  "setup-mfa": "/onboarding",
-};
-
-export function resolveTaskDestination(
-  currentTask: { key: string } | null | undefined,
-): string {
-  if (currentTask?.key && TASK_ROUTES[currentTask.key]) {
-    return TASK_ROUTES[currentTask.key];
-  }
-  return "/";
-}
-
 const MFA_SUBTITLES: Record<string, string> = {
   email_code:
     "For your security, we need to verify it's you. Enter the code sent to your email.",

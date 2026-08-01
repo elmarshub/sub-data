@@ -1,36 +1,60 @@
-import CreateSubscriptionModal from "@/components/CreateSubscriptionModal";
 import ListHeading from "@/components/ListHeading";
-import SubscriptionCard from "@/components/SubscriptionCard";
-import UpcomingSubscriptionCard from "@/components/UpcomingSubscriptionCard";
-import { HOME_BALANCE, UPCOMING_SUBSCRIPTIONS } from "@/constants/data";
+import SubscriptionCard from "@/components/subscription/SubscriptionCard";
+import SubscriptionFormModal from "@/components/subscription/SubscriptionFormModal";
+import UpcomingSubscriptionCard from "@/components/subscription/UpcomingSubscriptionCard";
 import { icons } from "@/constants/icons";
 import { images } from "@/constants/images";
 import "@/global.css";
 import { posthog } from "@/lib/posthog";
+import {
+  getMonthlyTotal,
+  getNextRenewalDate,
+  getUpcomingRenewals,
+} from "@/lib/subscriptions";
 import { formatCurrency } from "@/lib/utils";
 import { useSubscriptions } from "@/store/subscriptions";
 import { useUser } from "@clerk/expo";
 import dayjs from "dayjs";
-import { useState } from "react";
+import { useRouter } from "expo-router";
+import { useMemo, useState } from "react";
 import { FlatList, Image, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function App() {
   const { user } = useUser();
   const { subscriptions, addSubscription } = useSubscriptions();
-  const [expandedSunscriptionId, setExpandedSunscriptionId] = useState<
-    string | null
-  >(null);
+  const router = useRouter();
   const [modalVisible, setModalVisible] = useState(false);
+
+  const monthlyTotal = useMemo(
+    () => getMonthlyTotal(subscriptions),
+    [subscriptions],
+  );
+  const nextRenewalDate = useMemo(
+    () => getNextRenewalDate(subscriptions),
+    [subscriptions],
+  );
+  const upcomingRenewals = useMemo(
+    () => getUpcomingRenewals(subscriptions),
+    [subscriptions],
+  );
+
+  const openSubscription = (id: string) => {
+    router.push(`/subscriptions/${id}`);
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-background p-4">
       <FlatList
         ListHeaderComponent={() => (
           <>
-            {/* header fro user and add button */}
             <View className="home-header">
-              <View className="home-user">
+              <Pressable
+                className="home-user"
+                onPress={() => router.push("/settings")}
+                accessibilityRole="button"
+                accessibilityLabel="Open your profile"
+              >
                 <Image
                   source={
                     user?.imageUrl ? { uri: user.imageUrl } : images.avatar
@@ -45,7 +69,7 @@ export default function App() {
                       ? user.primaryEmailAddress.emailAddress.split("@")[0]
                       : "User")}
                 </Text>
-              </View>
+              </Pressable>
 
               <Pressable
                 onPress={() => setModalVisible(true)}
@@ -59,27 +83,33 @@ export default function App() {
               </Pressable>
             </View>
 
-            {/* balance and next sub date */}
             <View className="home-balance-card">
               <Text className="home-balance-label">Balance</Text>
 
               <View className="home-balance-row">
                 <Text className="home-balance-amount">
-                  {formatCurrency(HOME_BALANCE.amount)}
+                  {formatCurrency(monthlyTotal)}
                 </Text>
-                <Text className="home-balance-date">
-                  {dayjs(HOME_BALANCE.nextRenewalDate).format("MM/DD")}
-                </Text>
+                {nextRenewalDate ? (
+                  <Text className="home-balance-date">
+                    {dayjs(nextRenewalDate).format("MM/DD")}
+                  </Text>
+                ) : null}
               </View>
             </View>
 
-            {/* upcoming subscriptions */}
             <View className="mb-5">
-              <ListHeading title="Upcoming" />
+              <ListHeading
+                title="Upcoming"
+                onViewAllPress={() => router.push("/upcoming")}
+              />
               <FlatList
-                data={UPCOMING_SUBSCRIPTIONS}
+                data={upcomingRenewals}
                 renderItem={({ item }) => (
-                  <UpcomingSubscriptionCard {...item} />
+                  <UpcomingSubscriptionCard
+                    {...item}
+                    onPress={() => openSubscription(item.id)}
+                  />
                 )}
                 keyExtractor={(item) => item.id}
                 horizontal
@@ -92,7 +122,10 @@ export default function App() {
               />
             </View>
 
-            <ListHeading title="All Subscriptions" />
+            <ListHeading
+              title="All Subscriptions"
+              onViewAllPress={() => router.push("/subscriptions")}
+            />
           </>
         )}
         data={subscriptions}
@@ -100,30 +133,27 @@ export default function App() {
         renderItem={({ item }) => (
           <SubscriptionCard
             {...item}
-            expanded={expandedSunscriptionId === item.id}
             onPress={() => {
-              const isExpanded = expandedSunscriptionId === item.id;
-              setExpandedSunscriptionId(isExpanded ? null : item.id);
-              posthog.capture("subscription_card_toggled", {
+              posthog.capture("subscription_card_pressed", {
                 subscription_id: item.id,
-                is_expanded: !isExpanded,
+                screen: "home",
               });
+              openSubscription(item.id);
             }}
           />
         )}
         ListEmptyComponent={
           <Text className="home-empty-state">No subscriptions yet.</Text>
         }
-        extraData={expandedSunscriptionId}
         ItemSeparatorComponent={() => <View className="h-4" />}
         showsVerticalScrollIndicator={false}
         contentContainerClassName="pb-30"
       />
 
-      <CreateSubscriptionModal
+      <SubscriptionFormModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
-        onCreate={(sub) => {
+        onSubmit={(sub) => {
           addSubscription(sub);
           setModalVisible(false);
         }}
