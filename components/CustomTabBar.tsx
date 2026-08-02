@@ -26,6 +26,7 @@ interface TabBarIconProps {
   title: string;
   focused: boolean;
   onPress: () => void;
+  onLongPress: () => void;
   onLayout: (layout: TabLayout) => void;
 }
 
@@ -34,6 +35,7 @@ const TabBarIcon = ({
   title,
   focused,
   onPress,
+  onLongPress,
   onLayout,
 }: TabBarIconProps) => {
   const scale = useSharedValue(1);
@@ -59,6 +61,7 @@ const TabBarIcon = ({
       className="tabs-icon"
       onLayout={handleLayout}
       onPress={onPress}
+      onLongPress={onLongPress}
       accessibilityRole="tab"
       accessibilityState={{ selected: focused }}
       accessibilityLabel={title}
@@ -119,7 +122,7 @@ const CustomTabBar = ({ state, navigation }: BottomTabBarProps) => {
         ]}
       />
 
-      <View className="tabs-bar" style={{ flex: 1 }}>
+      <View className="tabs-bar" style={{ flex: 1 }} accessibilityRole="tablist">
         {activeLayout ? (
           <Animated.View
             className="tabs-indicator"
@@ -163,6 +166,12 @@ const CustomTabBar = ({ state, navigation }: BottomTabBarProps) => {
                 if (!focused && !event.defaultPrevented) {
                   navigation.navigate(route.name);
                 }
+              }}
+              onLongPress={() => {
+                navigation.emit({
+                  type: "tabLongPress",
+                  target: route.key,
+                });
               }}
             />
           );

@@ -1,7 +1,12 @@
 import AuthBrandBlock from "@/components/AuthBrandBlock";
 import AuthField from "@/components/AuthField";
 import { posthog } from "@/lib/posthog";
-import { canResendMfa, getMfaSubtitle, selectMfaFactor } from "@/lib/utils";
+import {
+  canResendMfa,
+  getAuthErrorMessage,
+  getMfaSubtitle,
+  selectMfaFactor,
+} from "@/lib/utils";
 import { MfaCodeValues, SignInValues, mfaCodeSchema, signInSchema } from "@/schemas/auth";
 import { useSignIn } from "@clerk/expo";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -50,11 +55,7 @@ const SignIn = () => {
     try {
       const { error } = await signIn.password({ emailAddress, password });
       if (error) {
-        const msg =
-          error.longMessage ||
-          error.message ||
-          "Sign-in failed. Please try again.";
-        setFormError(msg);
+        setFormError(getAuthErrorMessage(error, "Sign-in failed. Please try again."));
         return;
       }
 
@@ -74,9 +75,7 @@ const SignIn = () => {
             const { error: sendError } = await signIn.mfa.sendEmailCode();
             if (sendError) {
               setFormError(
-                sendError.longMessage ||
-                  sendError.message ||
-                  "Failed to send verification code.",
+                getAuthErrorMessage(sendError, "Failed to send verification code."),
               );
               setMfaStrategy(null);
               return;
@@ -85,9 +84,7 @@ const SignIn = () => {
             const { error: sendError } = await signIn.mfa.sendPhoneCode();
             if (sendError) {
               setFormError(
-                sendError.longMessage ||
-                  sendError.message ||
-                  "Failed to send verification code.",
+                getAuthErrorMessage(sendError, "Failed to send verification code."),
               );
               setMfaStrategy(null);
               return;
@@ -102,7 +99,7 @@ const SignIn = () => {
     } catch (err) {
       const error = err instanceof Error ? err : new Error("Sign-in failed");
       posthog.captureException(error, { flow: "sign_in" });
-      setFormError(error.message);
+      setFormError(getAuthErrorMessage(err, "Sign-in failed. Please try again."));
     }
   };
 
@@ -120,11 +117,9 @@ const SignIn = () => {
         ({ error: verifyError } = await signIn.mfa.verifyEmailCode({ code }));
       }
       if (verifyError) {
-        const msg =
-          verifyError.longMessage ||
-          verifyError.message ||
-          "Verification failed. Please try again.";
-        setFormError(msg);
+        setFormError(
+          getAuthErrorMessage(verifyError, "Verification failed. Please try again."),
+        );
         return;
       }
       if (signIn.status === "complete") {
@@ -139,7 +134,9 @@ const SignIn = () => {
       const error =
         err instanceof Error ? err : new Error("Sign-in verification failed");
       posthog.captureException(error, { flow: "sign_in_verification" });
-      setFormError(error.message);
+      setFormError(
+        getAuthErrorMessage(err, "Verification failed. Please try again."),
+      );
     }
   };
 
@@ -164,9 +161,6 @@ const SignIn = () => {
             />
             <View className="auth-card">
               <View className="auth-form">
-                {formError ? (
-                  <Text className="auth-error">{formError}</Text>
-                ) : null}
                 <Controller
                   control={mfaControl}
                   name="code"
@@ -181,6 +175,9 @@ const SignIn = () => {
                     />
                   )}
                 />
+                {formError ? (
+                  <Text className="auth-error">{formError}</Text>
+                ) : null}
                 <Pressable
                   className={`auth-button ${isLoading ? "auth-button-disabled" : ""}`}
                   onPress={handleMfaSubmit(onVerifyValid)}
@@ -201,9 +198,10 @@ const SignIn = () => {
                           : await signIn.mfa.sendEmailCode();
                       if (sendError) {
                         setFormError(
-                          sendError.longMessage ||
-                            sendError.message ||
+                          getAuthErrorMessage(
+                            sendError,
                             "Failed to resend verification code.",
+                          ),
                         );
                       }
                     }}
@@ -249,9 +247,6 @@ const SignIn = () => {
           />
           <View className="auth-card">
             <View className="auth-form">
-              {formError ? (
-                <Text className="auth-error">{formError}</Text>
-              ) : null}
               <Controller
                 control={signInControl}
                 name="emailAddress"
@@ -286,6 +281,9 @@ const SignIn = () => {
                   />
                 )}
               />
+              {formError ? (
+                <Text className="auth-error">{formError}</Text>
+              ) : null}
               <Pressable
                 className={`auth-button ${isLoading || isSignInSubmitting ? "auth-button-disabled" : ""}`}
                 onPress={handleSignInSubmit(onSignInValid)}

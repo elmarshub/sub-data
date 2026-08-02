@@ -1,6 +1,7 @@
 import AuthBrandBlock from "@/components/AuthBrandBlock";
 import AuthField from "@/components/AuthField";
 import { posthog } from "@/lib/posthog";
+import { getAuthErrorMessage } from "@/lib/utils";
 import { MfaCodeValues, SignUpValues, mfaCodeSchema, signUpSchema } from "@/schemas/auth";
 import { useAuth, useSignUp } from "@clerk/expo";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -61,26 +62,18 @@ const SignUp = () => {
         username,
       });
       if (error) {
-        const msg =
-          error.longMessage ||
-          error.message ||
-          "Sign-up failed. Please try again.";
-        setFormError(msg);
+        setFormError(getAuthErrorMessage(error, "Sign-up failed. Please try again."));
         return;
       }
 
       const { error: sendError } = await signUp.verifications.sendEmailCode();
       if (sendError) {
         setFormError(
-          sendError.longMessage ||
-            sendError.message ||
-            "Failed to send verification code.",
+          getAuthErrorMessage(sendError, "Failed to send verification code."),
         );
       }
     } catch (err) {
-      const msg =
-        err instanceof Error ? err.message : "An unexpected error occurred.";
-      setFormError(msg);
+      setFormError(getAuthErrorMessage(err, "An unexpected error occurred."));
     }
   };
 
@@ -91,9 +84,7 @@ const SignUp = () => {
         await signUp.verifications.verifyEmailCode({ code });
       if (verifyError) {
         setFormError(
-          verifyError.longMessage ||
-            verifyError.message ||
-            "That code didn't work. Please try again.",
+          getAuthErrorMessage(verifyError, "That code didn't work. Please try again."),
         );
         return;
       }
@@ -109,7 +100,9 @@ const SignUp = () => {
       const error =
         err instanceof Error ? err : new Error("Sign-up verification failed");
       posthog.captureException(error, { flow: "sign_up_verification" });
-      setFormError(error.message);
+      setFormError(
+        getAuthErrorMessage(err, "Verification failed. Please try again."),
+      );
     }
   };
 
@@ -139,9 +132,6 @@ const SignUp = () => {
             />
             <View className="auth-card">
               <View className="auth-form">
-                {formError ? (
-                  <Text className="auth-error">{formError}</Text>
-                ) : null}
                 <Controller
                   control={verifyControl}
                   name="code"
@@ -158,6 +148,9 @@ const SignUp = () => {
                     />
                   )}
                 />
+                {formError ? (
+                  <Text className="auth-error">{formError}</Text>
+                ) : null}
                 <Pressable
                   className={`auth-button ${isLoading ? "auth-button-disabled" : ""}`}
                   onPress={handleVerifySubmit(onVerifyValid)}
@@ -175,9 +168,10 @@ const SignUp = () => {
                       await signUp.verifications.sendEmailCode();
                     if (sendError) {
                       setFormError(
-                        sendError.longMessage ||
-                          sendError.message ||
+                        getAuthErrorMessage(
+                          sendError,
                           "Failed to resend verification code.",
+                        ),
                       );
                     }
                   }}
@@ -211,9 +205,6 @@ const SignUp = () => {
           />
           <View className="auth-card">
             <View className="auth-form">
-              {formError ? (
-                <Text className="auth-error">{formError}</Text>
-              ) : null}
               <Controller
                 control={signUpControl}
                 name="username"
@@ -279,6 +270,9 @@ const SignUp = () => {
                   />
                 )}
               />
+              {formError ? (
+                <Text className="auth-error">{formError}</Text>
+              ) : null}
               <Pressable
                 className={`auth-button ${isLoading ? "auth-button-disabled" : ""}`}
                 onPress={handleSignUpSubmit(onSignUpValid)}

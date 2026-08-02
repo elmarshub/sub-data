@@ -1,6 +1,7 @@
 import AuthBrandBlock from "@/components/AuthBrandBlock";
 import AuthField from "@/components/AuthField";
 import { posthog } from "@/lib/posthog";
+import { getAuthErrorMessage } from "@/lib/utils";
 import {
   ForgotPasswordRequestValues,
   ResetPasswordValues,
@@ -48,7 +49,12 @@ const ForgotPassword = () => {
 
   const isLoading = fetchStatus === "fetching";
 
-  const onRequestValid = async ({ emailAddress }: ForgotPasswordRequestValues) => {
+  const REQUEST_FAILURE_MESSAGE =
+    "We couldn't process your request. Please check the email and try again.";
+
+  const onRequestValid = async ({
+    emailAddress,
+  }: ForgotPasswordRequestValues) => {
     setFormError(null);
 
     try {
@@ -56,22 +62,14 @@ const ForgotPassword = () => {
         identifier: emailAddress,
       });
       if (createError) {
-        setFormError(
-          createError.longMessage ||
-            createError.message ||
-            "Couldn't find an account with that email.",
-        );
+        setFormError(REQUEST_FAILURE_MESSAGE);
         return;
       }
 
       const { error: sendError } =
         await signIn.resetPasswordEmailCode.sendCode();
       if (sendError) {
-        setFormError(
-          sendError.longMessage ||
-            sendError.message ||
-            "Failed to send reset code.",
-        );
+        setFormError(REQUEST_FAILURE_MESSAGE);
         return;
       }
 
@@ -81,7 +79,7 @@ const ForgotPassword = () => {
       const error =
         err instanceof Error ? err : new Error("Reset request failed");
       posthog.captureException(error, { flow: "forgot_password" });
-      setFormError(error.message);
+      setFormError(REQUEST_FAILURE_MESSAGE);
     }
   };
 
@@ -93,9 +91,7 @@ const ForgotPassword = () => {
         await signIn.resetPasswordEmailCode.verifyCode({ code });
       if (verifyError) {
         setFormError(
-          verifyError.longMessage ||
-            verifyError.message ||
-            "That code didn't work. Please try again.",
+          getAuthErrorMessage(verifyError, "That code didn't work. Please try again."),
         );
         return;
       }
@@ -104,15 +100,25 @@ const ForgotPassword = () => {
         await signIn.resetPasswordEmailCode.submitPassword({ password });
       if (submitError) {
         setFormError(
-          submitError.longMessage ||
-            submitError.message ||
+          getAuthErrorMessage(
+            submitError,
             "Couldn't reset your password. Please try again.",
+          ),
         );
         return;
       }
 
       if (signIn.status === "complete") {
-        await signIn.finalize();
+        const { error: finalizeError } = await signIn.finalize();
+        if (finalizeError) {
+          setFormError(
+            getAuthErrorMessage(
+              finalizeError,
+              "Couldn't reset your password. Please try again.",
+            ),
+          );
+          return;
+        }
         posthog.capture("password_reset_completed");
       } else {
         setFormError("Couldn't reset your password. Please try again.");
@@ -121,7 +127,9 @@ const ForgotPassword = () => {
       const error =
         err instanceof Error ? err : new Error("Password reset failed");
       posthog.captureException(error, { flow: "forgot_password_reset" });
-      setFormError(error.message);
+      setFormError(
+        getAuthErrorMessage(err, "Couldn't reset your password. Please try again."),
+      );
     }
   };
 
@@ -149,10 +157,6 @@ const ForgotPassword = () => {
 
           <View className="auth-card">
             <View className="auth-form">
-              {formError ? (
-                <Text className="auth-error">{formError}</Text>
-              ) : null}
-
               {stage === "request" ? (
                 <>
                   <Controller
@@ -172,6 +176,9 @@ const ForgotPassword = () => {
                       />
                     )}
                   />
+                  {formError ? (
+                    <Text className="auth-error">{formError}</Text>
+                  ) : null}
                   <Pressable
                     className={`auth-button ${isLoading ? "auth-button-disabled" : ""}`}
                     onPress={handleRequestSubmit(onRequestValid)}
@@ -194,7 +201,8 @@ const ForgotPassword = () => {
                         onChangeText={onChange}
                         placeholder="Enter 6-digit code"
                         error={
-                          resetErrors.code?.message || errors.fields.code?.message
+                          resetErrors.code?.message ||
+                          errors.fields.code?.message
                         }
                         keyboardType="numeric"
                       />
@@ -228,6 +236,9 @@ const ForgotPassword = () => {
                       />
                     )}
                   />
+                  {formError ? (
+                    <Text className="auth-error">{formError}</Text>
+                  ) : null}
                   <Pressable
                     className={`auth-button ${isLoading ? "auth-button-disabled" : ""}`}
                     onPress={handleResetSubmit(onResetValid)}

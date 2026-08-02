@@ -26,7 +26,7 @@ interface SubscriptionFormModalProps {
   visible: boolean;
   onClose: () => void;
   onSubmit: (subscription: Subscription) => void;
-  /** When provided, the modal edits this subscription instead of creating a new one. */
+  /** when provided, the modal edits this subscription instead of creating a new one. */
   initialValues?: Subscription;
 }
 
@@ -56,7 +56,7 @@ const SubscriptionFormModal = ({
     defaultValues: DEFAULT_VALUES,
   });
 
-  // Re-sync every time the modal opens, either prefilling from the
+  // re-sync every time the modal opens, either prefilling from the
   // subscription being edited or resetting to a blank create form.
   useEffect(() => {
     if (!visible) return;

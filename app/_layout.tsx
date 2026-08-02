@@ -77,8 +77,7 @@ function RootLayoutContent() {
     }
   }, [pathname]);
 
-  // First-ever launch lands new visitors on Sign Up instead of the default
-  // Sign In. Fires once, imperatively, right after the welcome screen closes.
+  // first-ever launch lands new visitors on Sign Up instead of the default
   useEffect(() => {
     if (welcomeDismissed && isFirstLaunchRef.current && !isSignedIn) {
       isFirstLaunchRef.current = false;
