@@ -1,3 +1,4 @@
+import { isClerkAPIResponseError } from "@clerk/expo";
 import dayjs from "dayjs";
 
 export function formatCurrency(value: number, currency = "USD"): string {
@@ -26,21 +27,6 @@ export const formatStatusLabel = (value?: string): string => {
   return value.charAt(0).toUpperCase() + value.slice(1);
 };
 
-const TASK_ROUTES: Record<string, string> = {
-  "choose-organization": "/onboarding",
-  "reset-password": "/onboarding",
-  "setup-mfa": "/onboarding",
-};
-
-export function resolveTaskDestination(
-  currentTask: { key: string } | null | undefined,
-): string {
-  if (currentTask?.key && TASK_ROUTES[currentTask.key]) {
-    return TASK_ROUTES[currentTask.key];
-  }
-  return "/";
-}
-
 const MFA_SUBTITLES: Record<string, string> = {
   email_code:
     "For your security, we need to verify it's you. Enter the code sent to your email.",
@@ -63,4 +49,21 @@ export function selectMfaFactor<T extends { strategy: string }>(
   factors: T[],
 ): T | undefined {
   return factors.find((f) => f.strategy !== "email_link");
+}
+
+// clerk's raw 5xx messages describe its own outage, not something the user can
+// act on, so we swap them for one consistent message instead of showing the wire text.
+export function getAuthErrorMessage(error: unknown, fallback: string): string {
+  if (isClerkAPIResponseError(error) && error.status >= 500) {
+    return "something went wrong on our end. please try again in a moment.";
+  }
+  if (error && typeof error === "object") {
+    const { longMessage, message } = error as {
+      longMessage?: string;
+      message?: string;
+    };
+    if (longMessage) return longMessage;
+    if (message) return message;
+  }
+  return fallback;
 }

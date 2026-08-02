@@ -11,6 +11,7 @@ const AuthBrandBlock = ({ title, subtitle }: AuthBrandBlockProps) => {
     <View className="auth-brand-block">
       <View className="auth-logo-wrap">
         <View className="auth-logo-mark">
+          <View className="auth-logo-glow" />
           <Text className="auth-logo-mark-text">S</Text>
         </View>
         <View>

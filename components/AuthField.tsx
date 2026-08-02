@@ -1,3 +1,4 @@
+import { colors } from "@/constants/theme";
 import React from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 
@@ -34,7 +35,7 @@ const AuthField = ({
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
-          placeholderTextColor="rgba(0, 0, 0, 0.4)"
+          placeholderTextColor={colors.mutedForeground}
           secureTextEntry={isSecure}
           keyboardType={keyboardType}
           autoCapitalize={autoCapitalize}
