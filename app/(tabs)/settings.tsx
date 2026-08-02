@@ -1,7 +1,7 @@
 import { posthog } from "@/lib/posthog";
 import { useClerk, useUser } from "@clerk/expo";
 import React from "react";
-import { Image, Pressable, Text, View } from "react-native";
+import { Alert, Image, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const Settings = () => {
@@ -10,20 +10,26 @@ const Settings = () => {
   const [isSigningOut, setIsSigningOut] = React.useState(false);
   const [signOutError, setSignOutError] = React.useState<string | null>(null);
 
-  const handleSignOut = async () => {
+  const performSignOut = async () => {
     setSignOutError(null);
     setIsSigningOut(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 600));
+      await signOut();
       posthog.capture("user_signed_out");
       posthog.reset();
-      await signOut();
     } catch (err) {
       const error = err instanceof Error ? err : new Error("Sign-out failed");
       posthog.captureException(error, { flow: "sign_out" });
       setSignOutError(error.message);
       setIsSigningOut(false);
     }
+  };
+
+  const handleSignOut = () => {
+    Alert.alert("Log out?", "You'll need to sign in again to access your subscriptions.", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Log Out", style: "destructive", onPress: performSignOut },
+    ]);
   };
 
   return (

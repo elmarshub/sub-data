@@ -3,20 +3,20 @@
 @tailwind utilities;
 
 @layer components {
+  .tabs-bar {
+    @apply flex-row items-center;
+  }
+
   .tabs-icon {
-    @apply size-12 items-center justify-center;
-  }
-
-  .tabs-pill {
-    @apply size-12 items-center justify-center rounded-full bg-transparent;
-  }
-
-  .tabs-active {
-    @apply bg-accent;
+    @apply h-full flex-1 items-center justify-center;
   }
 
   .tabs-glyph {
     @apply size-6;
+  }
+
+  .tabs-indicator {
+    @apply absolute left-0 top-3.5 rounded-full bg-accent;
   }
 
   .home-header {
@@ -79,6 +79,10 @@
     @apply mr-4 w-44 rounded-2xl border border-black/10 bg-background p-4;
   }
 
+  .upcoming-card-full {
+    @apply w-full rounded-2xl border border-black/10 bg-background p-4;
+  }
+
   .upcoming-row {
     @apply flex-row items-center gap-3;
   }
@@ -100,15 +104,11 @@
   }
 
   .sub-card {
-    @apply rounded-2xl border border-border p-4;
-  }
-
-  .sub-card-expanded {
-    @apply bg-subscription;
+    @apply rounded-2xl border border-border bg-card p-4;
   }
 
   .sub-head {
-    @apply flex-row items-center py-2;
+    @apply flex-row items-center;
   }
 
   .sub-main {
@@ -143,40 +143,8 @@
     @apply text-sm font-sans-medium text-muted-foreground;
   }
 
-  .sub-body {
-    @apply mt-6 gap-4;
-  }
-
-  .sub-details {
-    @apply gap-6;
-  }
-
-  .sub-row {
-    @apply flex-row items-center justify-between gap-3;
-  }
-
-  .sub-row-copy {
-    @apply min-w-0 flex-1 flex-row items-center gap-2;
-  }
-
-  .sub-label {
-    @apply shrink-0 text-base font-sans-medium text-muted-foreground;
-  }
-
-  .sub-value {
-    @apply flex-1 font-sans-bold text-primary;
-  }
-
-  .sub-cancel {
-    @apply mt-2 items-center rounded-full bg-primary py-4;
-  }
-
-  .sub-cancel-disabled {
-    @apply bg-primary/35;
-  }
-
-  .sub-cancel-text {
-    @apply font-sans-bold text-background;
+  .sub-status-dot {
+    @apply size-2 rounded-full;
   }
 
   .home-empty-state {
@@ -211,6 +179,10 @@
     @apply relative size-14 items-center justify-center rounded-2xl bg-accent;
   }
 
+  .auth-logo-glow {
+    @apply absolute -z-10 size-24 rounded-full bg-accent/15;
+  }
+
   .auth-logo-mark-text {
     @apply text-2xl font-sans-extrabold text-background;
   }
@@ -232,7 +204,7 @@
   }
 
   .auth-card {
-    @apply mt-8 rounded-3xl border border-border bg-card p-5;
+    @apply mt-8 rounded-3xl border border-border bg-card p-5 shadow-lg shadow-black/5;
   }
 
   .auth-form {
@@ -376,7 +348,15 @@
   }
 
   .sub-screen-title {
-    @apply mb-4 text-2xl font-sans-bold text-primary;
+    @apply text-2xl font-sans-bold text-primary;
+  }
+
+  .search-header-row {
+    @apply mb-4 flex-row items-center justify-between;
+  }
+
+  .search-toggle-button {
+    @apply size-10 items-center justify-center rounded-full bg-muted;
   }
 
   .sub-search-bar {
@@ -389,5 +369,165 @@
 
   .sub-search-placeholder {
     @apply text-muted-foreground;
+  }
+
+  .welcome-safe-area {
+    @apply flex-1 items-center justify-center bg-background;
+  }
+
+  .welcome-pattern {
+    @apply absolute inset-0 opacity-30;
+  }
+
+  .welcome-logo-wrap {
+    @apply size-24 items-center justify-center rounded-4xl bg-accent;
+  }
+
+  .welcome-logo-text {
+    @apply text-4xl font-sans-extrabold text-background;
+  }
+
+  .welcome-wordmark {
+    @apply mt-5 text-2xl font-sans-extrabold text-primary;
+  }
+
+  .welcome-tagline {
+    @apply mt-1 text-sm font-sans-semibold text-muted-foreground;
+  }
+
+  .detail-safe-area {
+    @apply flex-1 bg-background;
+  }
+
+  .detail-header {
+    @apply flex-row items-center justify-between px-5 pt-2;
+  }
+
+  .detail-back-button {
+    @apply size-10 items-center justify-center rounded-full bg-muted;
+  }
+
+  .detail-scroll {
+    @apply px-5 pb-16 pt-6;
+  }
+
+  .detail-hero {
+    @apply items-center gap-3 pb-6;
+  }
+
+  .detail-icon {
+    @apply size-20 rounded-2xl;
+  }
+
+  .detail-name {
+    @apply text-center text-2xl font-sans-extrabold text-primary;
+  }
+
+  .detail-plan {
+    @apply text-sm font-sans-semibold text-muted-foreground;
+  }
+
+  .detail-price {
+    @apply mt-2 text-4xl font-sans-extrabold text-primary;
+  }
+
+  .detail-billing {
+    @apply text-sm font-sans-semibold text-muted-foreground;
+  }
+
+  .detail-status-badge {
+    @apply mt-2 flex-row items-center gap-2 self-center rounded-full border border-border bg-card px-3 py-1.5;
+  }
+
+  .detail-status-text {
+    @apply text-xs font-sans-bold uppercase tracking-[1px] text-primary;
+  }
+
+  .detail-section {
+    @apply gap-4 rounded-3xl border border-border bg-card p-5;
+  }
+
+  .detail-section-title {
+    @apply text-sm font-sans-bold uppercase tracking-[1px] text-muted-foreground;
+  }
+
+  .detail-row {
+    @apply flex-row items-center justify-between gap-3;
+  }
+
+  .detail-row-label {
+    @apply text-base font-sans-medium text-muted-foreground;
+  }
+
+  .detail-row-value {
+    @apply flex-1 text-right font-sans-bold text-primary;
+  }
+
+  .detail-actions {
+    @apply mt-6 gap-3;
+  }
+
+  .detail-action-primary {
+    @apply items-center rounded-2xl bg-accent py-4;
+  }
+
+  .detail-action-primary-text {
+    @apply font-sans-bold text-primary;
+  }
+
+  .detail-action-secondary {
+    @apply items-center rounded-2xl border border-border bg-card py-4;
+  }
+
+  .detail-action-secondary-text {
+    @apply font-sans-bold text-primary;
+  }
+
+  .detail-action-destructive {
+    @apply items-center rounded-2xl border border-destructive/30 bg-destructive/10 py-4;
+  }
+
+  .detail-action-destructive-text {
+    @apply font-sans-bold text-destructive;
+  }
+
+  .detail-icon-actions-row {
+    @apply flex-row justify-center gap-8;
+  }
+
+  .detail-icon-action {
+    @apply items-center gap-1.5;
+  }
+
+  .detail-icon-action-circle {
+    @apply size-14 items-center justify-center rounded-full;
+  }
+
+  .detail-icon-action-circle-edit {
+    @apply bg-accent/15;
+  }
+
+  .detail-icon-action-circle-neutral {
+    @apply bg-muted;
+  }
+
+  .detail-icon-action-circle-danger {
+    @apply bg-destructive/15;
+  }
+
+  .detail-icon-action-label {
+    @apply text-xs font-sans-semibold text-muted-foreground;
+  }
+
+  .detail-placeholder {
+    @apply flex-1 items-center justify-center gap-2 px-8;
+  }
+
+  .detail-placeholder-title {
+    @apply text-xl font-sans-bold text-primary;
+  }
+
+  .detail-placeholder-subtitle {
+    @apply text-center text-sm font-sans-medium text-muted-foreground;
   }
 }
