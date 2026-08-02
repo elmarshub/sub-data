@@ -6,7 +6,7 @@ import { getUpcomingRenewals } from "@/lib/subscriptions";
 import { useSubscriptions } from "@/store/subscriptions";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
-import { FlatList, Keyboard, Text, TouchableWithoutFeedback, View } from "react-native";
+import { FlatList, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const UpcomingScreen = () => {
@@ -15,7 +15,7 @@ const UpcomingScreen = () => {
   const [search, setSearch] = useState("");
 
   const upcoming = useMemo(
-    () => getUpcomingRenewals(subscriptions, subscriptions.length),
+    () => getUpcomingRenewals(subscriptions, Infinity),
     [subscriptions],
   );
 
@@ -31,35 +31,33 @@ const UpcomingScreen = () => {
         <BackButton onPress={() => router.back()} />
       </View>
 
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <FlatList
-          data={filtered}
-          keyExtractor={(item) => item.id}
-          contentContainerClassName="px-5 pb-16 pt-4"
-          ListHeaderComponent={
-            <CollapsibleSearch
-              title="Upcoming Renewals"
-              value={search}
-              onChangeText={setSearch}
-              placeholder="Search upcoming..."
-            />
-          }
-          renderItem={({ item }) => (
-            <UpcomingSubscriptionCard
-              {...item}
-              fullWidth
-              onPress={() => router.push(`/subscriptions/${item.id}`)}
-            />
-          )}
-          ItemSeparatorComponent={() => <View className="h-4" />}
-          ListEmptyComponent={
-            <Text className="home-empty-state">No upcoming renewals.</Text>
-          }
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="on-drag"
-        />
-      </TouchableWithoutFeedback>
+      <FlatList
+        data={filtered}
+        keyExtractor={(item) => item.id}
+        contentContainerClassName="px-5 pb-16 pt-4"
+        ListHeaderComponent={
+          <CollapsibleSearch
+            title="Upcoming Renewals"
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Search upcoming..."
+          />
+        }
+        renderItem={({ item }) => (
+          <UpcomingSubscriptionCard
+            {...item}
+            fullWidth
+            onPress={() => router.push(`/subscriptions/${item.id}`)}
+          />
+        )}
+        ItemSeparatorComponent={() => <View className="h-4" />}
+        ListEmptyComponent={
+          <Text className="home-empty-state">No upcoming renewals.</Text>
+        }
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+      />
     </SafeAreaView>
   );
 };

@@ -68,7 +68,13 @@ const CollapsibleSearch = ({
         </Pressable>
       </View>
 
-      <Animated.View style={animatedStyle} className="overflow-hidden">
+      <Animated.View
+        style={animatedStyle}
+        className="overflow-hidden"
+        pointerEvents={isExpanded ? "auto" : "none"}
+        accessibilityElementsHidden={!isExpanded}
+        importantForAccessibility={isExpanded ? "auto" : "no-hide-descendants"}
+      >
         <View className="sub-search-bar">
           <TextInput
             ref={inputRef}
@@ -77,6 +83,7 @@ const CollapsibleSearch = ({
             onBlur={handleBlur}
             placeholder={placeholder}
             placeholderTextColor={colors.mutedForeground}
+            accessibilityLabel={placeholder}
             className="sub-search-input"
             style={{ color: colors.primary }}
           />

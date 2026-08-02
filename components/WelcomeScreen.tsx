@@ -41,6 +41,8 @@ const WelcomeScreen = ({ onFinish }: WelcomeScreenProps) => {
         source={images.splashPattern}
         className="welcome-pattern"
         resizeMode="cover"
+        accessible={false}
+        importantForAccessibility="no"
       />
       <Animated.View style={logoStyle} className="items-center">
         <View className="welcome-logo-wrap">

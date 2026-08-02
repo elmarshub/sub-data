@@ -16,7 +16,7 @@ import { useSubscriptions } from "@/store/subscriptions";
 import { useUser } from "@clerk/expo";
 import dayjs from "dayjs";
 import { useRouter } from "expo-router";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { FlatList, Image, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -39,95 +39,107 @@ export default function App() {
     [subscriptions],
   );
 
-  const openSubscription = (id: string) => {
-    router.push(`/subscriptions/${id}`);
-  };
+  const openSubscription = useCallback(
+    (id: string) => {
+      router.push(`/subscriptions/${id}`);
+    },
+    [router],
+  );
+
+  const renderHeader = useCallback(
+    () => (
+      <>
+        <View className="home-header">
+          <Pressable
+            className="home-user"
+            onPress={() => router.push("/settings")}
+            accessibilityRole="button"
+            accessibilityLabel="Open your profile"
+          >
+            <Image
+              source={user?.imageUrl ? { uri: user.imageUrl } : images.avatar}
+              className="home-avatar"
+            />
+            <Text className="home-user-name capitalize">
+              {user?.username ||
+                user?.firstName ||
+                user?.fullName ||
+                (user?.primaryEmailAddress?.emailAddress
+                  ? user.primaryEmailAddress.emailAddress.split("@")[0]
+                  : "User")}
+            </Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() => setModalVisible(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Add subscription"
+          >
+            <Image
+              source={icons.add}
+              className="home-add-icon border border-gray-400 rounded-full p-2"
+            />
+          </Pressable>
+        </View>
+
+        <View className="home-balance-card">
+          <Text className="home-balance-label">Balance</Text>
+
+          <View className="home-balance-row">
+            <Text
+              className="home-balance-amount"
+              accessibilityLabel={`Monthly spend ${formatCurrency(monthlyTotal)}`}
+            >
+              {formatCurrency(monthlyTotal)}
+            </Text>
+            {nextRenewalDate ? (
+              <Text
+                className="home-balance-date"
+                accessibilityLabel={`Next renewal date ${dayjs(nextRenewalDate).format("MMMM D")}`}
+              >
+                {dayjs(nextRenewalDate).format("MM/DD")}
+              </Text>
+            ) : null}
+          </View>
+        </View>
+
+        <View className="mb-5">
+          <ListHeading
+            title="Upcoming"
+            onViewAllPress={() => router.push("/upcoming")}
+          />
+          <FlatList
+            data={upcomingRenewals}
+            renderItem={({ item }) => (
+              <UpcomingSubscriptionCard
+                {...item}
+                onPress={() => openSubscription(item.id)}
+              />
+            )}
+            keyExtractor={(item) => item.id}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            ListEmptyComponent={
+              <Text className="home-empty-state">
+                No upcoming renewals yet.
+              </Text>
+            }
+          />
+        </View>
+
+        <ListHeading
+          title="All Subscriptions"
+          onViewAllPress={() => router.push("/subscriptions")}
+        />
+      </>
+    ),
+    [user, monthlyTotal, nextRenewalDate, upcomingRenewals, router, openSubscription],
+  );
 
   return (
     <SafeAreaView className="flex-1 bg-background p-4">
       <FlatList
-        ListHeaderComponent={() => (
-          <>
-            <View className="home-header">
-              <Pressable
-                className="home-user"
-                onPress={() => router.push("/settings")}
-                accessibilityRole="button"
-                accessibilityLabel="Open your profile"
-              >
-                <Image
-                  source={
-                    user?.imageUrl ? { uri: user.imageUrl } : images.avatar
-                  }
-                  className="home-avatar"
-                />
-                <Text className="home-user-name capitalize">
-                  {user?.username ||
-                    user?.firstName ||
-                    user?.fullName ||
-                    (user?.primaryEmailAddress?.emailAddress
-                      ? user.primaryEmailAddress.emailAddress.split("@")[0]
-                      : "User")}
-                </Text>
-              </Pressable>
-
-              <Pressable
-                onPress={() => setModalVisible(true)}
-                accessibilityRole="button"
-                accessibilityLabel="Add subscription"
-              >
-                <Image
-                  source={icons.add}
-                  className="home-add-icon border border-gray-400 rounded-full p-2"
-                />
-              </Pressable>
-            </View>
-
-            <View className="home-balance-card">
-              <Text className="home-balance-label">Balance</Text>
-
-              <View className="home-balance-row">
-                <Text className="home-balance-amount">
-                  {formatCurrency(monthlyTotal)}
-                </Text>
-                {nextRenewalDate ? (
-                  <Text className="home-balance-date">
-                    {dayjs(nextRenewalDate).format("MM/DD")}
-                  </Text>
-                ) : null}
-              </View>
-            </View>
-
-            <View className="mb-5">
-              <ListHeading
-                title="Upcoming"
-                onViewAllPress={() => router.push("/upcoming")}
-              />
-              <FlatList
-                data={upcomingRenewals}
-                renderItem={({ item }) => (
-                  <UpcomingSubscriptionCard
-                    {...item}
-                    onPress={() => openSubscription(item.id)}
-                  />
-                )}
-                keyExtractor={(item) => item.id}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                ListEmptyComponent={
-                  <Text className="home-empty-state">
-                    No upcoming renewals yet.
-                  </Text>
-                }
-              />
-            </View>
-
-            <ListHeading
-              title="All Subscriptions"
-              onViewAllPress={() => router.push("/subscriptions")}
-            />
-          </>
-        )}
+        ListHeaderComponent={renderHeader}
         data={subscriptions}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (

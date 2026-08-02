@@ -68,7 +68,15 @@ const SignUp = () => {
         setFormError(msg);
         return;
       }
-      await signUp.verifications.sendEmailCode();
+
+      const { error: sendError } = await signUp.verifications.sendEmailCode();
+      if (sendError) {
+        setFormError(
+          sendError.longMessage ||
+            sendError.message ||
+            "Failed to send verification code.",
+        );
+      }
     } catch (err) {
       const msg =
         err instanceof Error ? err.message : "An unexpected error occurred.";
@@ -79,7 +87,16 @@ const SignUp = () => {
   const onVerifyValid = async ({ code }: MfaCodeValues) => {
     setFormError(null);
     try {
-      await signUp.verifications.verifyEmailCode({ code });
+      const { error: verifyError } =
+        await signUp.verifications.verifyEmailCode({ code });
+      if (verifyError) {
+        setFormError(
+          verifyError.longMessage ||
+            verifyError.message ||
+            "That code didn't work. Please try again.",
+        );
+        return;
+      }
       if (signUp.status === "complete") {
         await signUp.finalize();
         posthog.capture("sign_up_completed", {
@@ -142,7 +159,7 @@ const SignUp = () => {
                   )}
                 />
                 <Pressable
-                  className={`auth-button ${isLoading && "auth-button-disabled"}`}
+                  className={`auth-button ${isLoading ? "auth-button-disabled" : ""}`}
                   onPress={handleVerifySubmit(onVerifyValid)}
                   disabled={isLoading}
                 >
@@ -152,7 +169,18 @@ const SignUp = () => {
                 </Pressable>
                 <Pressable
                   className="auth-secondary-button"
-                  onPress={() => signUp.verifications.sendEmailCode()}
+                  onPress={async () => {
+                    setFormError(null);
+                    const { error: sendError } =
+                      await signUp.verifications.sendEmailCode();
+                    if (sendError) {
+                      setFormError(
+                        sendError.longMessage ||
+                          sendError.message ||
+                          "Failed to resend verification code.",
+                      );
+                    }
+                  }}
                 >
                   <Text className="auth-secondary-button-text">
                     Resend code
@@ -252,7 +280,7 @@ const SignUp = () => {
                 )}
               />
               <Pressable
-                className={`auth-button ${isLoading && "auth-button-disabled"}`}
+                className={`auth-button ${isLoading ? "auth-button-disabled" : ""}`}
                 onPress={handleSignUpSubmit(onSignUpValid)}
                 disabled={isLoading}
               >

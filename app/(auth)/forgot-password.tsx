@@ -39,6 +39,7 @@ const ForgotPassword = () => {
   const {
     control: resetControl,
     handleSubmit: handleResetSubmit,
+    reset: resetResetForm,
     formState: { errors: resetErrors },
   } = useForm<ResetPasswordValues>({
     resolver: zodResolver(resetPasswordSchema),
@@ -113,6 +114,8 @@ const ForgotPassword = () => {
       if (signIn.status === "complete") {
         await signIn.finalize();
         posthog.capture("password_reset_completed");
+      } else {
+        setFormError("Couldn't reset your password. Please try again.");
       }
     } catch (err) {
       const error =
@@ -170,7 +173,7 @@ const ForgotPassword = () => {
                     )}
                   />
                   <Pressable
-                    className={`auth-button ${isLoading && "auth-button-disabled"}`}
+                    className={`auth-button ${isLoading ? "auth-button-disabled" : ""}`}
                     onPress={handleRequestSubmit(onRequestValid)}
                     disabled={isLoading}
                   >
@@ -226,7 +229,7 @@ const ForgotPassword = () => {
                     )}
                   />
                   <Pressable
-                    className={`auth-button ${isLoading && "auth-button-disabled"}`}
+                    className={`auth-button ${isLoading ? "auth-button-disabled" : ""}`}
                     onPress={handleResetSubmit(onResetValid)}
                     disabled={isLoading}
                   >
@@ -237,6 +240,7 @@ const ForgotPassword = () => {
                   <Pressable
                     className="auth-secondary-button"
                     onPress={() => {
+                      resetResetForm();
                       setStage("request");
                       setFormError(null);
                     }}

@@ -26,7 +26,7 @@ const SignIn = () => {
   const {
     control: signInControl,
     handleSubmit: handleSignInSubmit,
-    formState: { errors: signInErrors },
+    formState: { errors: signInErrors, isSubmitting: isSignInSubmitting },
   } = useForm<SignInValues>({
     resolver: zodResolver(signInSchema),
     defaultValues: { emailAddress: "", password: "" },
@@ -182,7 +182,7 @@ const SignIn = () => {
                   )}
                 />
                 <Pressable
-                  className={`auth-button ${isLoading && "auth-button-disabled"}`}
+                  className={`auth-button ${isLoading ? "auth-button-disabled" : ""}`}
                   onPress={handleMfaSubmit(onVerifyValid)}
                   disabled={isLoading}
                 >
@@ -287,12 +287,12 @@ const SignIn = () => {
                 )}
               />
               <Pressable
-                className={`auth-button ${isLoading && "auth-button-disabled"}`}
+                className={`auth-button ${isLoading || isSignInSubmitting ? "auth-button-disabled" : ""}`}
                 onPress={handleSignInSubmit(onSignInValid)}
-                disabled={isLoading}
+                disabled={isLoading || isSignInSubmitting}
               >
                 <Text className="auth-button-text">
-                  {isLoading ? "Signing in..." : "Sign In"}
+                  {isLoading || isSignInSubmitting ? "Signing in..." : "Sign In"}
                 </Text>
               </Pressable>
 

@@ -10,6 +10,7 @@ const BackButton = ({ onPress }: BackButtonProps) => (
   <Pressable
     onPress={onPress}
     className="detail-back-button"
+    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
     accessibilityRole="button"
     accessibilityLabel="Go back"
   >

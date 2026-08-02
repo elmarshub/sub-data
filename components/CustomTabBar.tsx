@@ -59,8 +59,8 @@ const TabBarIcon = ({
       className="tabs-icon"
       onLayout={handleLayout}
       onPress={onPress}
-      accessibilityRole="button"
-      accessibilityState={focused ? { selected: true } : {}}
+      accessibilityRole="tab"
+      accessibilityState={{ selected: focused }}
       accessibilityLabel={title}
     >
       <Animated.Image
@@ -142,7 +142,17 @@ const CustomTabBar = ({ state, navigation }: BottomTabBarProps) => {
               title={tab.title}
               focused={focused}
               onLayout={(layout) =>
-                setTabLayouts((prev) => ({ ...prev, [index]: layout }))
+                setTabLayouts((prev) => {
+                  const existing = prev[index];
+                  if (
+                    existing &&
+                    existing.x === layout.x &&
+                    existing.width === layout.width
+                  ) {
+                    return prev;
+                  }
+                  return { ...prev, [index]: layout };
+                })
               }
               onPress={() => {
                 const event = navigation.emit({

@@ -7,11 +7,9 @@ import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import {
   FlatList,
-  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Text,
-  TouchableWithoutFeedback,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -38,42 +36,42 @@ const Subscriptions = () => {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         className="flex-1"
       >
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <FlatList
-            ListHeaderComponent={
-              <CollapsibleSearch
-                title="Subscriptions"
-                value={search}
-                onChangeText={setSearch}
-                placeholder="Search subscriptions..."
-              />
-            }
-            data={filtered}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <SubscriptionCard
-                {...item}
-                onPress={() => {
-                  posthog.capture("subscription_card_pressed", {
-                    subscription_id: item.id,
-                    screen: "subscriptions",
-                  });
-                  router.push(`/subscriptions/${item.id}`);
-                }}
-              />
-            )}
-            ListEmptyComponent={
-              <Text className="home-empty-state">
-                No subscriptions match &quot;{search}&quot;.
-              </Text>
-            }
-            ItemSeparatorComponent={() => <View className="h-4" />}
-            showsVerticalScrollIndicator={false}
-            contentContainerClassName="pb-30"
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag"
-          />
-        </TouchableWithoutFeedback>
+        <FlatList
+          ListHeaderComponent={
+            <CollapsibleSearch
+              title="Subscriptions"
+              value={search}
+              onChangeText={setSearch}
+              placeholder="Search subscriptions..."
+            />
+          }
+          data={filtered}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <SubscriptionCard
+              {...item}
+              onPress={() => {
+                posthog.capture("subscription_card_pressed", {
+                  subscription_id: item.id,
+                  screen: "subscriptions",
+                });
+                router.push(`/subscriptions/${item.id}`);
+              }}
+            />
+          )}
+          ListEmptyComponent={
+            <Text className="home-empty-state">
+              {search.trim()
+                ? `No subscriptions match "${search}".`
+                : "No subscriptions yet."}
+            </Text>
+          }
+          ItemSeparatorComponent={() => <View className="h-4" />}
+          showsVerticalScrollIndicator={false}
+          contentContainerClassName="pb-30"
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+        />
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

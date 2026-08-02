@@ -13,8 +13,15 @@ export const getMonthlyTotal = (subscriptions: Subscription[]): number =>
 export const getNextRenewalDate = (
   subscriptions: Subscription[],
 ): string | null => {
+  const today = dayjs().startOf("day");
+
   const upcoming = subscriptions
-    .filter((sub) => sub.status === "active" && sub.renewalDate)
+    .filter(
+      (sub) =>
+        sub.status === "active" &&
+        sub.renewalDate &&
+        !dayjs(sub.renewalDate).startOf("day").isBefore(today),
+    )
     .sort(
       (a, b) =>
         dayjs(a.renewalDate).valueOf() - dayjs(b.renewalDate).valueOf(),

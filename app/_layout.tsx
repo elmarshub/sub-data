@@ -7,7 +7,7 @@ import { tokenCache } from "@clerk/expo/token-cache";
 import { useFonts } from "expo-font";
 import { SplashScreen, Stack, usePathname, useRouter } from "expo-router";
 import { PostHogProvider } from "posthog-react-native";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Text, View } from "react-native";
 
 const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
@@ -41,7 +41,9 @@ function RootLayoutContent() {
   const [welcomeDismissed, setWelcomeDismissed] = useState(false);
 
   useEffect(() => {
-    getHasLaunchedBefore().then(setHasLaunchedBeforeState);
+    getHasLaunchedBefore()
+      .then(setHasLaunchedBeforeState)
+      .catch(() => setHasLaunchedBeforeState(false));
   }, []);
 
   useEffect(() => {
@@ -49,6 +51,12 @@ function RootLayoutContent() {
       SplashScreen.hideAsync();
     }
   }, [fontsLoaded, error]);
+
+  useEffect(() => {
+    if (error) {
+      console.error("Failed to load fonts:", error);
+    }
+  }, [error]);
 
   useEffect(() => {
     if (user) {
@@ -78,8 +86,15 @@ function RootLayoutContent() {
     }
   }, [welcomeDismissed, isSignedIn, router]);
 
+  const handleWelcomeFinish = useCallback(async () => {
+    if (!hasLaunchedBefore) {
+      isFirstLaunchRef.current = true;
+      await setHasLaunchedBefore();
+    }
+    setWelcomeDismissed(true);
+  }, [hasLaunchedBefore]);
+
   if (error) {
-    console.error("Failed to load fonts:", error);
     return (
       <View className="flex-1 items-center justify-center bg-background">
         <Text className="text-primary">
@@ -94,17 +109,7 @@ function RootLayoutContent() {
   }
 
   if (!welcomeDismissed) {
-    return (
-      <WelcomeScreen
-        onFinish={async () => {
-          if (!hasLaunchedBefore) {
-            isFirstLaunchRef.current = true;
-            await setHasLaunchedBefore();
-          }
-          setWelcomeDismissed(true);
-        }}
-      />
-    );
+    return <WelcomeScreen onFinish={handleWelcomeFinish} />;
   }
 
   const stack = (

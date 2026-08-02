@@ -1,6 +1,5 @@
 import { getSubscriptionIcon } from "@/constants/icons";
 import { formatCurrency } from "@/lib/utils";
-import clsx from "clsx";
 import React from "react";
 import { Image, Pressable, Text, View } from "react-native";
 
@@ -13,7 +12,7 @@ const UpcomingSubscriptionCard = ({
   onPress,
   fullWidth,
 }: UpcomingSubscriptionCardProps) => {
-  const cardClassName = clsx(fullWidth ? "upcoming-card-full" : "upcoming-card");
+  const cardClassName = fullWidth ? "upcoming-card-full" : "upcoming-card";
 
   const content = (
     <>
@@ -25,7 +24,11 @@ const UpcomingSubscriptionCard = ({
           </Text>
 
           <Text className="upcoming-meta" numberOfLines={1}>
-            {daysLeft > 1 ? `${daysLeft} days left` : `Last day`}
+            {daysLeft === 0
+              ? "Last day"
+              : daysLeft === 1
+                ? "1 day left"
+                : `${daysLeft} days left`}
           </Text>
         </View>
       </View>

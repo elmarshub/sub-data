@@ -36,7 +36,7 @@ export const signUpSchema = z
 export type SignUpValues = z.infer<typeof signUpSchema>;
 
 export const mfaCodeSchema = z.object({
-  code: z.string().min(1, "Code is required"),
+  code: z.string().trim().min(1, "Code is required"),
 });
 export type MfaCodeValues = z.infer<typeof mfaCodeSchema>;
 
@@ -49,7 +49,7 @@ export type ForgotPasswordRequestValues = z.infer<
 
 export const resetPasswordSchema = z
   .object({
-    code: z.string().min(1, "Code is required"),
+    code: z.string().trim().min(1, "Code is required"),
     ...newPasswordFields,
   })
   .refine(passwordsMatch, {

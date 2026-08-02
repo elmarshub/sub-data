@@ -7,10 +7,10 @@ export const subscriptionFormSchema = z.object({
     .string()
     .trim()
     .min(1, "Enter a valid price")
-    .refine(
-      (value) => !isNaN(Number(value)) && Number(value) > 0,
-      "Enter a valid price",
-    ),
+    .refine((value) => {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) && parsed > 0;
+    }, "Enter a valid price"),
   billing: z.enum(["Monthly", "Yearly"]),
   category: z.enum(CATEGORIES).nullable(),
 });
